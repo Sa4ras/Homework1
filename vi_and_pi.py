@@ -62,7 +62,26 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
 
     ############################
     # YOUR IMPLEMENTATION HERE #
+    k = 1
+    s = 0
 
+    while k > tol and s < 100:
+        new_value_function = np.zeros(nS)
+
+        for s in range(nS):
+            a = policy[s]
+            transitions = P[s][a]
+            for transition in transitions:
+                prob, nextS, reward, term = transition
+                new_value_function[s] += prob * (reward + gamma * value_function[nextS])
+
+        k = np.max(np.abs(new_value_function - value_function))
+        value_function = new_value_function
+        s += 1
+
+    if s >= 100:
+        print("Policy evaluation has never converged.")
+        exit()
     ############################
     return value_function
 
@@ -89,6 +108,18 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
 
     ############################
     # YOUR IMPLEMENTATION HERE #
+    for s in range(nS):
+        Qs = np.zeros(nA)
+
+        for a in range(nA):
+            transitions = P[s][a]
+            for transition in transitions:
+                prob, nextS, reward, term = transition
+                Qs[a] += prob * (reward + gamma * value_from_policy[nextS])
+
+        max_as = np.where(Qs == Qs.max())
+        max_as = max_as[0]
+        new_policy[s] = max_as[0]
 
     ############################
     return new_policy
@@ -115,7 +146,21 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
 
     ############################
     # YOUR IMPLEMENTATION HERE #
+    flag = True
+    i = 0
+    while flag and i < 100:
+        value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
+        new_policy = policy_improvement(P, nS, nA, value_function, policy, gamma)
+        diff_policy = new_policy - policy
 
+        if np.linalg.norm(diff_policy) == 0:
+            flag = False
+        policy = new_policy
+        i += 1
+
+    if (i == 100):
+        print("Policy iteraction has never converged.")
+        exit()
     ############################
     return value_function, policy
 
@@ -141,7 +186,34 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
     policy = np.zeros(nS, dtype=int)
     ############################
     # YOUR IMPLEMENTATION HERE #
+    k = 1
+    while k > tol:
+        new_value_function = np.zeros(nS)
+        for s in range(nS):
+            Qs = np.zeros(nA)
+            for a in range(nA):
+                transitions = P[s][a]
+                for transition in transitions:
+                    prob, nextS, reward, term = transition
+                    Qs[a] += prob * (reward + gamma * value_function[nextS])
+            new_value_function[s] = max(Qs)
 
+        value_function = new_value_function
+
+        diff_vf = new_value_function - value_function
+        k = np.linalg.norm(diff_vf)
+
+
+    for s in range(nS):
+        Qs = np.zeros(nA)
+        for a in range(nA):
+            transitions = P[s][a]
+            for transition in transitions:
+                prob, nextS, reward, term = transition
+                Qs[a] += prob * (reward + gamma * value_function[nextS])
+            max_as = np.where(Qs == Qs.max())
+            max_as = max_as[0]
+        policy[s] = max_as[0]
     ############################
     return value_function, policy
 
